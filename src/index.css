@@ -4,67 +4,67 @@
 
 /* MyTurn Design System
    Calm, institutional, trustworthy
-   Inspired by Indian government/banking portals
+   Modern aesthetic with Indian institutional sensibility
 */
 
 @layer base {
   :root {
-    /* Warm, paper-like background */
-    --background: 40 20% 98%;
-    --foreground: 220 25% 15%;
+    /* Soft cream background with subtle warmth */
+    --background: 45 30% 97%;
+    --foreground: 220 30% 12%;
 
-    /* Cards - slightly warmer than pure white */
-    --card: 40 25% 99%;
-    --card-foreground: 220 25% 15%;
+    /* Cards - clean white with slight warmth */
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 12%;
 
     /* Popover */
-    --popover: 40 25% 99%;
-    --popover-foreground: 220 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 12%;
 
-    /* Primary - Deep institutional slate blue */
-    --primary: 215 50% 23%;
-    --primary-foreground: 40 20% 98%;
+    /* Primary - Rich teal blue (modern, trustworthy) */
+    --primary: 200 65% 38%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Light stone */
-    --secondary: 40 15% 94%;
+    /* Secondary - Soft sage */
+    --secondary: 150 15% 94%;
     --secondary-foreground: 220 25% 20%;
 
-    /* Muted - Soft grey with warmth */
-    --muted: 40 10% 92%;
-    --muted-foreground: 220 15% 45%;
+    /* Muted - Warm grey */
+    --muted: 45 10% 91%;
+    --muted-foreground: 220 15% 40%;
 
-    /* Accent - Sage green for stability/confirmed */
-    --accent: 150 25% 92%;
-    --accent-foreground: 150 40% 25%;
+    /* Accent - Soft mint for success states */
+    --accent: 160 30% 92%;
+    --accent-foreground: 160 45% 25%;
 
-    /* Status colors */
-    --stable: 150 35% 45%;
-    --stable-foreground: 150 35% 98%;
-    --buffered: 35 70% 50%;
-    --buffered-foreground: 35 70% 10%;
-    --surge: 0 65% 50%;
+    /* Status colors - refined palette */
+    --stable: 158 45% 42%;
+    --stable-foreground: 0 0% 100%;
+    --buffered: 38 85% 52%;
+    --buffered-foreground: 38 90% 15%;
+    --surge: 4 70% 55%;
     --surge-foreground: 0 0% 100%;
 
-    /* Institutional blue for headers */
-    --institutional: 215 50% 23%;
-    --institutional-foreground: 40 20% 98%;
+    /* Institutional teal for headers */
+    --institutional: 200 65% 32%;
+    --institutional-foreground: 0 0% 100%;
 
-    /* Borders - subtle */
-    --border: 40 15% 88%;
-    --input: 40 15% 88%;
-    --ring: 215 50% 23%;
+    /* Borders - very subtle */
+    --border: 45 15% 88%;
+    --input: 45 15% 88%;
+    --ring: 200 65% 38%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 215 50% 18%;
-    --sidebar-foreground: 40 20% 95%;
-    --sidebar-primary: 40 20% 98%;
-    --sidebar-primary-foreground: 215 50% 18%;
-    --sidebar-accent: 215 45% 25%;
-    --sidebar-accent-foreground: 40 20% 95%;
-    --sidebar-border: 215 40% 25%;
-    --sidebar-ring: 150 35% 45%;
+    --sidebar-background: 200 55% 22%;
+    --sidebar-foreground: 45 20% 95%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 200 55% 22%;
+    --sidebar-accent: 200 50% 28%;
+    --sidebar-accent-foreground: 45 20% 95%;
+    --sidebar-border: 200 45% 30%;
+    --sidebar-ring: 158 45% 42%;
   }
 
   .dark {

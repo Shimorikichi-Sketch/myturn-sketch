@@ -13,17 +13,17 @@ const CustomerOnboarding = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
       {/* Header */}
-      <header className="p-6 border-b border-border">
-        <h1 className="text-2xl font-semibold text-primary">MyTurn</h1>
+      <header className="p-6 border-b border-border/50 bg-card/80 backdrop-blur-sm">
+        <h1 className="text-2xl font-bold text-primary">MyTurn</h1>
       </header>
 
       {/* Content */}
       <main className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-md space-y-8 animate-fade-in">
           {/* Location Card */}
-          <div className="p-6 rounded-xl border-2 border-border bg-card">
+          <div className="p-6 rounded-2xl border-2 border-border/50 bg-card shadow-sm">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <MapPin className="w-6 h-6 text-primary" />

@@ -92,12 +92,12 @@ const IntentSelection = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
       {/* Header */}
-      <header className="p-6 border-b border-border flex items-center gap-4">
+      <header className="p-6 border-b border-border/50 bg-card/80 backdrop-blur-sm flex items-center gap-4">
         <button 
           onClick={() => selectedCategory ? setSelectedCategory(null) : navigate(-1)}
-          className="p-2 -ml-2 hover:bg-secondary rounded-lg transition-colors"
+          className="p-2 -ml-2 hover:bg-secondary rounded-xl transition-colors"
         >
           <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </button>
@@ -122,13 +122,13 @@ const IntentSelection = () => {
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
-                  className="intent-card w-full animate-fade-in"
+                  className="w-full animate-fade-in flex items-center gap-4 p-5 rounded-2xl border-2 border-border/50 bg-card transition-all duration-200 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
                 >
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Icon className="w-6 h-6 text-primary" />
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                    <Icon className="w-7 h-7 text-primary" />
                   </div>
                   <div className="flex-1 text-left">
-                    <h3 className="font-medium text-foreground">{category.name}</h3>
+                    <h3 className="font-semibold text-foreground">{category.name}</h3>
                     <p className="text-sm text-muted-foreground">
                       {category.purposes.length} services available
                     </p>
@@ -146,17 +146,23 @@ const IntentSelection = () => {
                 <button
                   key={purpose.id}
                   onClick={() => setSelectedPurpose(purpose.id)}
-                  className={`intent-card w-full animate-fade-in ${isSelected ? 'intent-card-selected' : ''}`}
+                  className={`w-full animate-fade-in flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 ${
+                    isSelected 
+                      ? 'border-stable bg-stable/5 shadow-md' 
+                      : 'border-border/50 bg-card hover:border-primary/30'
+                  }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isSelected ? 'bg-stable/20' : 'bg-secondary'}`}>
-                    <Icon className={`w-5 h-5 ${isSelected ? 'text-stable' : 'text-muted-foreground'}`} />
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
+                    isSelected ? 'bg-stable/15' : 'bg-secondary'
+                  }`}>
+                    <Icon className={`w-5 h-5 transition-colors ${isSelected ? 'text-stable' : 'text-muted-foreground'}`} />
                   </div>
-                  <span className={`flex-1 text-left font-medium ${isSelected ? 'text-foreground' : 'text-foreground'}`}>
+                  <span className="flex-1 text-left font-medium text-foreground">
                     {purpose.name}
                   </span>
                   {isSelected && (
-                    <div className="w-5 h-5 rounded-full bg-stable flex items-center justify-center">
-                      <svg className="w-3 h-3 text-stable-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="w-6 h-6 rounded-full bg-stable flex items-center justify-center">
+                      <svg className="w-3.5 h-3.5 text-stable-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -170,11 +176,11 @@ const IntentSelection = () => {
 
       {/* Footer */}
       {selectedPurpose && (
-        <footer className="p-6 border-t border-border bg-card animate-fade-in">
+        <footer className="p-6 border-t border-border/50 bg-card/95 backdrop-blur-sm animate-fade-in">
           <Button
             variant="default"
             size="lg"
-            className="w-full max-w-lg mx-auto block"
+            className="w-full max-w-lg mx-auto block rounded-xl shadow-lg"
             onClick={handleContinue}
           >
             Find nearby options
