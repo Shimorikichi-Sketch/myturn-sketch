@@ -14,7 +14,441 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_type: string | null
+          checked_in_at: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          institution_id: string
+          notes: string | null
+          original_position: number | null
+          qr_code: string | null
+          queue_position: number | null
+          service_id: string
+          snooze_count: number | null
+          status: Database["public"]["Enums"]["booking_status"] | null
+          time_slot_end: string
+          time_slot_start: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          booking_date: string
+          booking_type?: string | null
+          checked_in_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          institution_id: string
+          notes?: string | null
+          original_position?: number | null
+          qr_code?: string | null
+          queue_position?: number | null
+          service_id: string
+          snooze_count?: number | null
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          time_slot_end: string
+          time_slot_start: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          booking_date?: string
+          booking_type?: string | null
+          checked_in_at?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          institution_id?: string
+          notes?: string | null
+          original_position?: number | null
+          qr_code?: string | null
+          queue_position?: number | null
+          service_id?: string
+          snooze_count?: number | null
+          status?: Database["public"]["Enums"]["booking_status"] | null
+          time_slot_end?: string
+          time_slot_start?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demand_predictions: {
+        Row: {
+          confidence_percent: number | null
+          created_at: string | null
+          id: string
+          institution_id: string
+          predicted_date: string
+          predicted_demand: number | null
+          predicted_hour: number | null
+          service_id: string | null
+        }
+        Insert: {
+          confidence_percent?: number | null
+          created_at?: string | null
+          id?: string
+          institution_id: string
+          predicted_date: string
+          predicted_demand?: number | null
+          predicted_hour?: number | null
+          service_id?: string | null
+        }
+        Update: {
+          confidence_percent?: number | null
+          created_at?: string | null
+          id?: string
+          institution_id?: string
+          predicted_date?: string
+          predicted_demand?: number | null
+          predicted_hour?: number | null
+          service_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demand_predictions_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demand_predictions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institution_analytics: {
+        Row: {
+          avg_wait_time_minutes: number | null
+          buffer_usage_percent: number | null
+          completed_bookings: number | null
+          created_at: string | null
+          date: string
+          hour: number | null
+          id: string
+          institution_id: string
+          missed_bookings: number | null
+          peak_load_time: string | null
+          service_id: string | null
+          total_footfall: number | null
+        }
+        Insert: {
+          avg_wait_time_minutes?: number | null
+          buffer_usage_percent?: number | null
+          completed_bookings?: number | null
+          created_at?: string | null
+          date: string
+          hour?: number | null
+          id?: string
+          institution_id: string
+          missed_bookings?: number | null
+          peak_load_time?: string | null
+          service_id?: string | null
+          total_footfall?: number | null
+        }
+        Update: {
+          avg_wait_time_minutes?: number | null
+          buffer_usage_percent?: number | null
+          completed_bookings?: number | null
+          created_at?: string | null
+          date?: string
+          hour?: number | null
+          id?: string
+          institution_id?: string
+          missed_bookings?: number | null
+          peak_load_time?: string | null
+          service_id?: string | null
+          total_footfall?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "institution_analytics_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "institution_analytics_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      institutions: {
+        Row: {
+          address: string
+          category: string
+          city: string
+          created_at: string | null
+          crowd_level: Database["public"]["Enums"]["crowd_level"] | null
+          id: string
+          is_active: boolean | null
+          latitude: number
+          longitude: number
+          name: string
+          operating_hours: Json | null
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          category: string
+          city: string
+          created_at?: string | null
+          crowd_level?: Database["public"]["Enums"]["crowd_level"] | null
+          id?: string
+          is_active?: boolean | null
+          latitude: number
+          longitude: number
+          name: string
+          operating_hours?: Json | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          category?: string
+          city?: string
+          created_at?: string | null
+          crowd_level?: Database["public"]["Enums"]["crowd_level"] | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number
+          longitude?: number
+          name?: string
+          operating_hours?: Json | null
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          city: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          city?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          avg_service_time_minutes: number | null
+          buffer_threshold: number | null
+          buffered_count: number | null
+          category: string
+          created_at: string | null
+          current_inflow: number | null
+          id: string
+          institution_id: string
+          name: string
+          normal_capacity: number | null
+          status: Database["public"]["Enums"]["service_status"] | null
+          subcategory: string | null
+          surge_threshold: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_service_time_minutes?: number | null
+          buffer_threshold?: number | null
+          buffered_count?: number | null
+          category: string
+          created_at?: string | null
+          current_inflow?: number | null
+          id?: string
+          institution_id: string
+          name: string
+          normal_capacity?: number | null
+          status?: Database["public"]["Enums"]["service_status"] | null
+          subcategory?: string | null
+          surge_threshold?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_service_time_minutes?: number | null
+          buffer_threshold?: number | null
+          buffered_count?: number | null
+          category?: string
+          created_at?: string | null
+          current_inflow?: number | null
+          id?: string
+          institution_id?: string
+          name?: string
+          normal_capacity?: number | null
+          status?: Database["public"]["Enums"]["service_status"] | null
+          subcategory?: string | null
+          surge_threshold?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff: {
+        Row: {
+          assigned_service_id: string | null
+          created_at: string | null
+          id: string
+          institution_id: string
+          is_available: boolean | null
+          name: string
+          role: Database["public"]["Enums"]["staff_role"] | null
+          shift_end: string | null
+          shift_start: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          assigned_service_id?: string | null
+          created_at?: string | null
+          id?: string
+          institution_id: string
+          is_available?: boolean | null
+          name: string
+          role?: Database["public"]["Enums"]["staff_role"] | null
+          shift_end?: string | null
+          shift_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          assigned_service_id?: string | null
+          created_at?: string | null
+          id?: string
+          institution_id?: string
+          is_available?: boolean | null
+          name?: string
+          role?: Database["public"]["Enums"]["staff_role"] | null
+          shift_end?: string | null
+          shift_start?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_assigned_service_id_fkey"
+            columns: ["assigned_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_assignments: {
+        Row: {
+          assigned_by: string | null
+          created_at: string | null
+          end_time: string | null
+          from_service_id: string | null
+          id: string
+          reason: string | null
+          staff_id: string
+          start_time: string | null
+          to_service_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string | null
+          end_time?: string | null
+          from_service_id?: string | null
+          id?: string
+          reason?: string | null
+          staff_id: string
+          start_time?: string | null
+          to_service_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string | null
+          end_time?: string | null
+          from_service_id?: string | null
+          id?: string
+          reason?: string | null
+          staff_id?: string
+          start_time?: string | null
+          to_service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_assignments_from_service_id_fkey"
+            columns: ["from_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_assignments_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_assignments_to_service_id_fkey"
+            columns: ["to_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +457,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      booking_status:
+        | "pending"
+        | "confirmed"
+        | "checked_in"
+        | "completed"
+        | "cancelled"
+        | "snoozed"
+      crowd_level: "low" | "moderate" | "high" | "surge"
+      service_status: "active" | "paused" | "surge" | "closed"
+      staff_role: "manager" | "operator" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +593,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      booking_status: [
+        "pending",
+        "confirmed",
+        "checked_in",
+        "completed",
+        "cancelled",
+        "snoozed",
+      ],
+      crowd_level: ["low", "moderate", "high", "surge"],
+      service_status: ["active", "paused", "surge", "closed"],
+      staff_role: ["manager", "operator", "staff"],
+    },
   },
 } as const
