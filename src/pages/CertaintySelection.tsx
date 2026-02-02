@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Zap, Clock, Star, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft, Zap, Clock, Star, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useBookings } from "@/hooks/useBookings";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface CertaintyOption {
   id: string;
@@ -12,77 +15,172 @@ interface CertaintyOption {
   icon: React.ElementType;
 }
 
-const certaintyOptions: CertaintyOption[] = [
-  {
-    id: "immediate",
-    type: "immediate",
-    title: "Immediate Arrival",
-    description: "Arrive now and be served when available",
-    time: "~15-30 min wait",
-    icon: Zap,
-  },
-  {
-    id: "scheduled",
-    type: "scheduled",
-    title: "Guaranteed Window",
-    description: "Arrive within your confirmed time slot",
-    time: "3:30 – 4:00 PM",
-    icon: Clock,
-  },
-  {
-    id: "priority",
-    type: "priority",
-    title: "Priority Access",
-    description: "For urgent cases or eligible categories",
-    time: "Next available",
-    icon: Star,
-  },
-];
-
 const CertaintySelection = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selected, setSelected] = useState<string | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const { createBooking } = useBookings();
 
-  const handleConfirm = () => {
-    setConfirmed(true);
+  const institution = location.state?.institution;
+  const service = location.state?.service;
+  const advanceBooking = location.state?.advanceBooking;
+  const selectedDate = location.state?.selectedDate;
+  const selectedSlot = location.state?.selectedSlot;
+
+  // Check auth status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Generate time windows
+  const getTimeWindows = () => {
+    if (advanceBooking && selectedSlot) {
+      return {
+        scheduled: {
+          start: selectedSlot.start,
+          end: selectedSlot.end,
+          display: `${format(new Date(`2000-01-01T${selectedSlot.start}`), "h:mm a")} – ${format(new Date(`2000-01-01T${selectedSlot.end}`), "h:mm a")}`,
+        },
+      };
+    }
+
+    const now = new Date();
+    const immediateStart = new Date(now.getTime() + 15 * 60000);
+    const immediateEnd = new Date(immediateStart.getTime() + 30 * 60000);
+    const scheduledStart = new Date(now.getTime() + 90 * 60000);
+    const scheduledEnd = new Date(scheduledStart.getTime() + 30 * 60000);
+
+    return {
+      immediate: {
+        start: format(immediateStart, "HH:mm"),
+        end: format(immediateEnd, "HH:mm"),
+        display: "~15-30 min wait",
+      },
+      scheduled: {
+        start: format(scheduledStart, "HH:mm"),
+        end: format(scheduledEnd, "HH:mm"),
+        display: `${format(scheduledStart, "h:mm a")} – ${format(scheduledEnd, "h:mm a")}`,
+      },
+    };
   };
 
-  if (confirmed) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background px-6">
-        <div className="text-center animate-fade-in">
-          <div className="w-20 h-20 rounded-full bg-stable/20 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-10 h-10 text-stable" />
-          </div>
-          <h1 className="text-2xl font-semibold text-foreground mb-2">
-            Confirmed
-          </h1>
-          <p className="text-muted-foreground mb-2">
-            City Eye Hospital
-          </p>
-          <p className="text-lg font-medium text-primary mb-8">
-            3:30 – 4:00 PM Today
-          </p>
-          
-          <div className="p-4 rounded-lg bg-accent/50 border border-stable/20 mb-8 max-w-sm">
-            <p className="text-sm text-foreground">
-              Please arrive 10 minutes before your window.
-              Bring valid ID and any relevant documents.
-            </p>
-          </div>
+  const timeWindows = getTimeWindows();
 
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate("/")}
-          >
-            Return Home
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const certaintyOptions: CertaintyOption[] = advanceBooking
+    ? [
+        {
+          id: "scheduled",
+          type: "scheduled",
+          title: "Confirmed Slot",
+          description: "Your selected time slot is confirmed",
+          time: timeWindows.scheduled?.display || "",
+          icon: Clock,
+        },
+      ]
+    : [
+        {
+          id: "immediate",
+          type: "immediate",
+          title: "Immediate Arrival",
+          description: "Arrive now and be served when available",
+          time: timeWindows.immediate?.display || "~15-30 min wait",
+          icon: Zap,
+        },
+        {
+          id: "scheduled",
+          type: "scheduled",
+          title: "Guaranteed Window",
+          description: "Arrive within your confirmed time slot",
+          time: timeWindows.scheduled?.display || "",
+          icon: Clock,
+        },
+        {
+          id: "priority",
+          type: "priority",
+          title: "Priority Access",
+          description: "For urgent cases or eligible categories",
+          time: "Next available",
+          icon: Star,
+        },
+      ];
+
+  const handleConfirm = async () => {
+    if (!selected) return;
+
+    // Check if user is logged in
+    if (!user) {
+      navigate("/auth", { state: { returnTo: location.pathname, ...location.state } });
+      return;
+    }
+
+    if (!institution || !service) {
+      console.error("Missing institution or service data");
+      return;
+    }
+
+    setLoading(true);
+
+    const selectedOption = certaintyOptions.find(o => o.id === selected);
+    const bookingDate = advanceBooking && selectedDate 
+      ? selectedDate 
+      : format(new Date(), "yyyy-MM-dd");
+
+    let timeStart = "09:00";
+    let timeEnd = "09:30";
+
+    if (selected === "immediate" && timeWindows.immediate) {
+      timeStart = timeWindows.immediate.start;
+      timeEnd = timeWindows.immediate.end;
+    } else if ((selected === "scheduled" || advanceBooking) && timeWindows.scheduled) {
+      timeStart = timeWindows.scheduled.start;
+      timeEnd = timeWindows.scheduled.end;
+    }
+
+    const booking = await createBooking({
+      institution_id: institution.id,
+      service_id: service.id,
+      booking_date: bookingDate,
+      time_slot_start: timeStart,
+      time_slot_end: timeEnd,
+      booking_type: selectedOption?.type || "immediate",
+      queue_position: Math.floor(Math.random() * 20) + 1,
+    });
+
+    setLoading(false);
+
+    if (booking) {
+      navigate("/customer/confirmation", {
+        state: {
+          booking: {
+            id: booking.id,
+            qr_code: booking.qr_code,
+            institution_name: institution.name,
+            institution_address: institution.address,
+            service_name: service.name,
+            booking_date: booking.booking_date,
+            time_slot_start: booking.time_slot_start,
+            time_slot_end: booking.time_slot_end,
+            booking_type: booking.booking_type,
+            queue_position: booking.queue_position,
+            travel_time: institution.travelTime,
+            departure_time: institution.departureTime,
+          },
+        },
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -99,7 +197,7 @@ const CertaintySelection = () => {
             Choose Your Certainty
           </h1>
           <p className="text-sm text-muted-foreground">
-            City Eye Hospital • 1.2 km away
+            {institution?.name || "Institution"} • {service?.name || "Service"}
           </p>
         </div>
       </header>
@@ -107,6 +205,14 @@ const CertaintySelection = () => {
       {/* Content */}
       <main className="flex-1 p-6">
         <div className="max-w-lg mx-auto space-y-4">
+          {advanceBooking && selectedDate && (
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 mb-4">
+              <p className="text-sm text-foreground">
+                <strong>Booking for:</strong> {format(new Date(selectedDate), "EEEE, MMMM d, yyyy")}
+              </p>
+            </div>
+          )}
+
           {certaintyOptions.map((option, index) => {
             const Icon = option.icon;
             const isSelected = selected === option.id;
@@ -156,6 +262,14 @@ const CertaintySelection = () => {
             Priority access is available for senior citizens, pregnant women,
             and medically urgent cases. Proof may be required.
           </p>
+
+          {/* Snooze Policy Notice */}
+          <div className="p-4 rounded-xl bg-buffered/10 border border-buffered/20 mt-4">
+            <p className="text-xs text-muted-foreground">
+              <strong className="text-foreground">Late arrival policy:</strong> If you arrive after your 
+              scheduled window, you'll be moved back 2 positions in the queue instead of being skipped entirely.
+            </p>
+          </div>
         </div>
       </main>
 
@@ -165,10 +279,18 @@ const CertaintySelection = () => {
           <Button
             variant="default"
             size="lg"
-            className="w-full max-w-lg mx-auto block"
+            className="w-full max-w-lg mx-auto block rounded-xl"
             onClick={handleConfirm}
+            disabled={loading}
           >
-            Confirm Booking
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Confirming...
+              </>
+            ) : (
+              "Confirm Booking"
+            )}
           </Button>
         </footer>
       )}

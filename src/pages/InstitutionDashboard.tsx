@@ -1,43 +1,140 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Activity, 
   Users, 
   Clock, 
   TrendingUp,
-  Pause,
-  Play,
   Settings,
   BarChart3,
-  AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { ServiceCard } from "@/components/institution/ServiceCard";
+import { AnalyticsChart } from "@/components/institution/AnalyticsChart";
+import { StaffManagement } from "@/components/institution/StaffManagement";
+import { DemandPrediction } from "@/components/institution/DemandPrediction";
 
-interface ServiceMetric {
+interface ServiceData {
   id: string;
   name: string;
-  inflow: number;
-  capacity: number;
-  status: "low" | "normal" | "high" | "surge";
-  buffered: number;
+  current_inflow: number;
+  normal_capacity: number;
+  buffered_count: number;
+  status: "active" | "paused" | "surge" | "closed";
+  surge_threshold: number;
 }
 
-const services: ServiceMetric[] = [
-  { id: "1", name: "Eye Consultation", inflow: 12, capacity: 20, status: "normal", buffered: 3 },
-  { id: "2", name: "Dental Check", inflow: 8, capacity: 15, status: "low", buffered: 0 },
-  { id: "3", name: "Blood Test", inflow: 18, capacity: 20, status: "high", buffered: 5 },
-  { id: "4", name: "General OPD", inflow: 25, capacity: 20, status: "surge", buffered: 12 },
+// Mock data for demonstration
+const mockHourlyData = [
+  { hour: "9AM", footfall: 12, completed: 10, buffered: 2 },
+  { hour: "10AM", footfall: 18, completed: 15, buffered: 5 },
+  { hour: "11AM", footfall: 25, completed: 20, buffered: 8 },
+  { hour: "12PM", footfall: 30, completed: 22, buffered: 12 },
+  { hour: "1PM", footfall: 28, completed: 25, buffered: 10 },
+  { hour: "2PM", footfall: 20, completed: 18, buffered: 6 },
+  { hour: "3PM", footfall: 15, completed: 14, buffered: 3 },
+  { hour: "4PM", footfall: 10, completed: 10, buffered: 1 },
 ];
 
-const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-  low: { bg: "bg-stable/10", text: "text-stable", label: "Low" },
-  normal: { bg: "bg-stable/10", text: "text-stable", label: "Normal" },
-  high: { bg: "bg-buffered/10", text: "text-buffered", label: "High" },
-  surge: { bg: "bg-surge/10", text: "text-surge", label: "Surge" },
-};
+const mockServiceDistribution = [
+  { name: "Eye Consultation", value: 35 },
+  { name: "General OPD", value: 40 },
+  { name: "Dental Check", value: 15 },
+  { name: "Blood Test", value: 10 },
+];
+
+const mockPredictions = [
+  { hour: "9AM", predicted: 15, capacity: 20, confidence: 85 },
+  { hour: "10AM", predicted: 22, capacity: 20, confidence: 80 },
+  { hour: "11AM", predicted: 28, capacity: 20, confidence: 75 },
+  { hour: "12PM", predicted: 35, capacity: 20, confidence: 70 },
+  { hour: "1PM", predicted: 30, capacity: 20, confidence: 72 },
+  { hour: "2PM", predicted: 25, capacity: 20, confidence: 78 },
+  { hour: "3PM", predicted: 18, capacity: 20, confidence: 82 },
+  { hour: "4PM", predicted: 12, capacity: 20, confidence: 88 },
+];
+
+const mockStaff = [
+  { id: "s1", name: "Dr. Sharma", role: "staff" as const, assigned_service: "eye", is_available: true },
+  { id: "s2", name: "Dr. Patel", role: "staff" as const, assigned_service: "eye", is_available: true },
+  { id: "s3", name: "Dr. Kumar", role: "staff" as const, assigned_service: "opd", is_available: true },
+  { id: "s4", name: "Dr. Singh", role: "operator" as const, assigned_service: "opd", is_available: true },
+  { id: "s5", name: "Nurse Gupta", role: "staff" as const, assigned_service: null, is_available: true },
+];
+
+const mockServiceStaff = [
+  { id: "eye", name: "Eye Consultation", staffCount: 2, demand: "high" as const },
+  { id: "opd", name: "General OPD", staffCount: 2, demand: "surge" as const },
+  { id: "dental", name: "Dental Check", staffCount: 0, demand: "low" as const },
+];
 
 const InstitutionDashboard = () => {
   const [pausedServices, setPausedServices] = useState<Set<string>>(new Set());
+  const [services, setServices] = useState<ServiceData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [liveFlow, setLiveFlow] = useState({
+    arriving: 24,
+    buffered: 20,
+    processing: 18,
+    completed: 156,
+  });
+
+  // Fetch services from database
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("services")
+          .select("*")
+          .limit(6);
+
+        if (error) throw error;
+
+        // Add mock current data for demonstration
+        const servicesWithData = (data || []).map((s, i) => ({
+          id: s.id,
+          name: s.name,
+          current_inflow: 10 + Math.floor(Math.random() * 20),
+          normal_capacity: s.normal_capacity,
+          buffered_count: Math.floor(Math.random() * 10),
+          status: (["active", "active", "surge", "active"][i % 4]) as ServiceData["status"],
+          surge_threshold: s.surge_threshold,
+        }));
+
+        setServices(servicesWithData);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+        // Use fallback data
+        setServices([
+          { id: "1", name: "Eye Consultation", current_inflow: 12, normal_capacity: 20, buffered_count: 3, status: "active", surge_threshold: 25 },
+          { id: "2", name: "Dental Check", current_inflow: 8, normal_capacity: 15, buffered_count: 0, status: "active", surge_threshold: 20 },
+          { id: "3", name: "Blood Test", current_inflow: 18, normal_capacity: 20, buffered_count: 5, status: "surge", surge_threshold: 22 },
+          { id: "4", name: "General OPD", current_inflow: 25, normal_capacity: 20, buffered_count: 12, status: "surge", surge_threshold: 25 },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+
+    // Simulate live flow updates
+    const interval = setInterval(() => {
+      setLiveFlow(prev => ({
+        arriving: prev.arriving + Math.floor(Math.random() * 3) - 1,
+        buffered: Math.max(0, prev.buffered + Math.floor(Math.random() * 3) - 1),
+        processing: prev.processing + Math.floor(Math.random() * 2),
+        completed: prev.completed + Math.floor(Math.random() * 2),
+      }));
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const togglePause = (serviceId: string) => {
     setPausedServices(prev => {
@@ -49,11 +146,19 @@ const InstitutionDashboard = () => {
       }
       return next;
     });
+
+    // Update service status in database (in a real app)
+    // This would update the service status and affect customer-facing availability
   };
 
-  const totalInflow = services.reduce((sum, s) => sum + s.inflow, 0);
-  const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);
-  const totalBuffered = services.reduce((sum, s) => sum + s.buffered, 0);
+  const handleStaffReassign = (staffId: string, fromService: string | null, toService: string) => {
+    console.log(`Reassigning staff ${staffId} from ${fromService} to ${toService}`);
+    // In a real app, this would update the database
+  };
+
+  const totalInflow = services.reduce((sum, s) => sum + s.current_inflow, 0);
+  const totalCapacity = services.reduce((sum, s) => sum + s.normal_capacity, 0);
+  const totalBuffered = services.reduce((sum, s) => sum + s.buffered_count, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,147 +185,161 @@ const InstitutionDashboard = () => {
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="metric-card">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Activity className="w-4 h-4" />
-              <span className="text-sm">Live Inflow</span>
-            </div>
-            <p className="text-3xl font-semibold text-foreground">{totalInflow}</p>
-            <p className="text-sm text-muted-foreground">per hour</p>
-          </div>
+        {/* Tabs Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+          <TabsList className="grid w-full grid-cols-4 max-w-md">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="staff">Staff</TabsTrigger>
+            <TabsTrigger value="forecast">Forecast</TabsTrigger>
+          </TabsList>
 
-          <div className="metric-card">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Users className="w-4 h-4" />
-              <span className="text-sm">Capacity</span>
-            </div>
-            <p className="text-3xl font-semibold text-foreground">{totalCapacity}</p>
-            <p className="text-sm text-muted-foreground">total slots</p>
-          </div>
-
-          <div className="metric-card">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">Buffered</span>
-            </div>
-            <p className="text-3xl font-semibold text-buffered">{totalBuffered}</p>
-            <p className="text-sm text-muted-foreground">waiting</p>
-          </div>
-
-          <div className="metric-card">
-            <div className="flex items-center gap-2 text-muted-foreground mb-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm">Utilization</span>
-            </div>
-            <p className="text-3xl font-semibold text-foreground">
-              {Math.round((totalInflow / totalCapacity) * 100)}%
-            </p>
-            <p className="text-sm text-muted-foreground">current</p>
-          </div>
-        </div>
-
-        {/* Service Status Grid */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Service Status
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {services.map((service) => {
-              const isPaused = pausedServices.has(service.id);
-              const statusInfo = statusColors[service.status];
-              const utilizationPercent = Math.round((service.inflow / service.capacity) * 100);
-
-              return (
-                <div 
-                  key={service.id} 
-                  className={`p-5 rounded-lg border bg-card ${isPaused ? 'opacity-60' : ''}`}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-medium text-foreground">{service.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.bg} ${statusInfo.text}`}>
-                          {statusInfo.label}
-                        </span>
-                        {service.buffered > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            {service.buffered} buffered
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => togglePause(service.id)}
-                      className={`p-2 rounded-lg transition-colors ${
-                        isPaused 
-                          ? 'bg-stable/10 text-stable hover:bg-stable/20' 
-                          : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-                      }`}
-                    >
-                      {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                    </button>
-                  </div>
-
-                  {/* Progress Bar */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Inflow / Capacity</span>
-                      <span className="font-medium text-foreground">
-                        {service.inflow} / {service.capacity}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-500 ${
-                          service.status === 'surge' ? 'bg-surge' :
-                          service.status === 'high' ? 'bg-buffered' : 'bg-stable'
-                        }`}
-                        style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {isPaused && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-                      <AlertTriangle className="w-4 h-4" />
-                      <span>Inflow paused</span>
-                    </div>
-                  )}
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-8">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="metric-card">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Activity className="w-4 h-4" />
+                  <span className="text-sm">Live Inflow</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+                <p className="text-3xl font-semibold text-foreground">{totalInflow}</p>
+                <p className="text-sm text-muted-foreground">per hour</p>
+              </div>
 
-        {/* Live Flow Visualization */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Live Flow
-          </h2>
-          <div className="flex gap-2">
-            <div className="flow-segment flow-arriving">
-              <p className="text-2xl font-semibold text-primary">24</p>
-              <p className="text-sm text-muted-foreground">Arriving</p>
+              <div className="metric-card">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Users className="w-4 h-4" />
+                  <span className="text-sm">Capacity</span>
+                </div>
+                <p className="text-3xl font-semibold text-foreground">{totalCapacity}</p>
+                <p className="text-sm text-muted-foreground">total slots</p>
+              </div>
+
+              <div className="metric-card">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm">Buffered</span>
+                </div>
+                <p className="text-3xl font-semibold text-buffered">{totalBuffered}</p>
+                <p className="text-sm text-muted-foreground">waiting</p>
+              </div>
+
+              <div className="metric-card">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="text-sm">Utilization</span>
+                </div>
+                <p className="text-3xl font-semibold text-foreground">
+                  {Math.round((totalInflow / totalCapacity) * 100)}%
+                </p>
+                <p className="text-sm text-muted-foreground">current</p>
+              </div>
             </div>
-            <ChevronRight className="w-6 h-6 text-muted-foreground self-center flex-shrink-0" />
-            <div className="flow-segment flow-buffered">
-              <p className="text-2xl font-semibold text-buffered">20</p>
-              <p className="text-sm text-muted-foreground">Buffered</p>
+
+            {/* Service Status Grid */}
+            <div>
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Service Status
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {services.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    isPaused={pausedServices.has(service.id)}
+                    onTogglePause={() => togglePause(service.id)}
+                  />
+                ))}
+              </div>
             </div>
-            <ChevronRight className="w-6 h-6 text-muted-foreground self-center flex-shrink-0" />
-            <div className="flow-segment flow-processing">
-              <p className="text-2xl font-semibold text-stable">18</p>
-              <p className="text-sm text-muted-foreground">Processing</p>
+
+            {/* Live Flow Visualization */}
+            <div>
+              <h2 className="text-lg font-semibold text-foreground mb-4">
+                Live Flow
+              </h2>
+              <div className="flex gap-2">
+                <div className="flow-segment flow-arriving">
+                  <p className="text-2xl font-semibold text-primary">{liveFlow.arriving}</p>
+                  <p className="text-sm text-muted-foreground">Arriving</p>
+                </div>
+                <ChevronRight className="w-6 h-6 text-muted-foreground self-center flex-shrink-0" />
+                <div className="flow-segment flow-buffered">
+                  <p className="text-2xl font-semibold text-buffered">{liveFlow.buffered}</p>
+                  <p className="text-sm text-muted-foreground">Buffered</p>
+                </div>
+                <ChevronRight className="w-6 h-6 text-muted-foreground self-center flex-shrink-0" />
+                <div className="flow-segment flow-processing">
+                  <p className="text-2xl font-semibold text-stable">{liveFlow.processing}</p>
+                  <p className="text-sm text-muted-foreground">Processing</p>
+                </div>
+                <ChevronRight className="w-6 h-6 text-muted-foreground self-center flex-shrink-0" />
+                <div className="flow-segment flow-completed">
+                  <p className="text-2xl font-semibold text-foreground">{liveFlow.completed}</p>
+                  <p className="text-sm text-muted-foreground">Completed</p>
+                </div>
+              </div>
             </div>
-            <ChevronRight className="w-6 h-6 text-muted-foreground self-center flex-shrink-0" />
-            <div className="flow-segment flow-completed">
-              <p className="text-2xl font-semibold text-foreground">156</p>
-              <p className="text-sm text-muted-foreground">Completed</p>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <AnalyticsChart
+                type="hourly"
+                data={mockHourlyData}
+                title="Hourly Footfall & Completed"
+              />
+              <AnalyticsChart
+                type="distribution"
+                data={mockServiceDistribution}
+                title="Service Distribution"
+              />
             </div>
-          </div>
-        </div>
+            <AnalyticsChart
+              type="buffer"
+              data={mockHourlyData}
+              title="Buffer Usage Throughout Day"
+            />
+
+            {/* Insights */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl border bg-card">
+                <h3 className="font-medium text-foreground mb-2">Peak Hours</h3>
+                <p className="text-2xl font-semibold text-primary mb-1">11am – 1pm</p>
+                <p className="text-sm text-muted-foreground">Highest demand period</p>
+              </div>
+              <div className="p-4 rounded-xl border bg-card">
+                <h3 className="font-medium text-foreground mb-2">Avg Wait Time</h3>
+                <p className="text-2xl font-semibold text-buffered mb-1">18 min</p>
+                <p className="text-sm text-muted-foreground">During peak hours</p>
+              </div>
+              <div className="p-4 rounded-xl border bg-card">
+                <h3 className="font-medium text-foreground mb-2">Buffer Efficiency</h3>
+                <p className="text-2xl font-semibold text-stable mb-1">92%</p>
+                <p className="text-sm text-muted-foreground">Successfully processed</p>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Staff Management Tab */}
+          <TabsContent value="staff">
+            <StaffManagement
+              staff={mockStaff}
+              services={mockServiceStaff}
+              onReassign={handleStaffReassign}
+            />
+          </TabsContent>
+
+          {/* Forecast Tab */}
+          <TabsContent value="forecast">
+            <DemandPrediction
+              predictions={mockPredictions}
+              surgeThreshold={25}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
